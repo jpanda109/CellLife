@@ -20,7 +20,6 @@ public class GridUI extends Actor {
         renderer = new ShapeRenderer();
         addListener(new InputListener() {
             public boolean touchDown(InputEvent e, float x, float y, int pointer, int button) {
-                System.out.println(x+","+y);
                 int gx = (int) x/10;
                 int gy = (int) y/10;
                 gameManager.grid[gx][gy] = !gameManager.grid[gx][gy];

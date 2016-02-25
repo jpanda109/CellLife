@@ -21,7 +21,6 @@ import java.util.HashMap;
  */
 public class Basic2D implements Screen {
 
-    ShapeRenderer renderer;
     GameManager2D gameManager;
     float stepLength = .5f;
     float currentStepTime = 0;
@@ -33,6 +32,8 @@ public class Basic2D implements Screen {
     Label deadRuleLabel;
     TextField cellAliveRuleField;
     TextField cellDeadRuleField;
+    enum GridState {PLAYING, PAUSED};
+    GridState gridState = GridState.PAUSED;
 
     public static final HashMap<String, Tuple<String, String>> RULE_PRESETS;
     static {
@@ -50,7 +51,6 @@ public class Basic2D implements Screen {
     }
 
 	public Basic2D (final GameOfLife game) {
-        renderer = new ShapeRenderer();
         gameManager = new GameManager2D();
         this.game = game;
         stage = new Stage();
@@ -65,6 +65,21 @@ public class Basic2D implements Screen {
                 gameManager.update();
             }
         });
+        TextButton playButton = new TextButton("Play", skin);
+        playButton.addListener(new ClickListener() {
+            public void clicked(InputEvent event, float x, float y) {
+                gridState = GridState.PLAYING;
+            }
+        });
+        TextButton pauseButton = new TextButton("Pause", skin);
+        pauseButton.addListener(new ClickListener() {
+            public void clicked(InputEvent e, float x, float y) {
+                gridState = GridState.PAUSED;
+            }
+        });
+
+        Label presetsLabel = new Label("Presets: ", skin);
+        presetsLabel.setColor(Color.BLACK);
 
         final SelectBox<String> selectBox = new SelectBox<String>(skin);
         String[] items = new String[RULE_PRESETS.size()];
@@ -126,8 +141,11 @@ public class Basic2D implements Screen {
         table.bottom();
         stage.addActor(table);
         table.setDebug(true);
+        table.add(playButton);
+        table.add(pauseButton);
         table.add(stepButton);
         table.row();
+        table.add(presetsLabel);
         table.add(selectBox);
         table.row();
         table.add(aliveRuleLabel);
@@ -151,11 +169,16 @@ public class Basic2D implements Screen {
 	}
 
     private void update(float delta) {
-//        currentStepTime += delta;
-//        if (currentStepTime > stepLength) {
-//            currentStepTime -= stepLength;
-//            gameManager.update();
-//        }
+        switch (gridState) {
+            case PAUSED:
+                break;
+            case PLAYING:
+                currentStepTime += delta;
+                if (currentStepTime > stepLength) {
+                    currentStepTime -= stepLength;
+                    gameManager.update();
+                }
+        }
         stage.act(delta);
     }
 
@@ -192,7 +215,6 @@ public class Basic2D implements Screen {
 
     @Override
     public void dispose() {
-        renderer.dispose();
         skin.dispose();
         stage.dispose();
     }
