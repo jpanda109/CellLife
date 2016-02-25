@@ -34,7 +34,7 @@ public class GameManager2D {
             rule[i] = false;
         }
         for (char c : ruleString.toCharArray()) {
-            int i = Character.getNumericValue(c);
+            int i = Integer.parseInt(""+c, 36); // can't use getNumericValue due to gwt compatibility
             rule[i] = true;
         }
     }
