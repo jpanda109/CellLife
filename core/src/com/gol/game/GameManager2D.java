@@ -1,5 +1,9 @@
 package com.gol.game;
 
+import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
+
 /**
  * Created by Jason on 2/23/2016.
  */
@@ -31,7 +35,6 @@ public class GameManager2D {
         }
         for (char c : ruleString.toCharArray()) {
             int i = Character.getNumericValue(c);
-            System.out.println(c + "," + i);
             rule[i] = true;
         }
     }

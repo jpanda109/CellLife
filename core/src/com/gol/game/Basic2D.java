@@ -11,6 +11,10 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.utils.Array;
+
+import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * Created by Jason on 2/23/2016.
@@ -25,13 +29,27 @@ public class Basic2D implements Screen {
     Stage stage;
     Table table;
     Skin skin;
+    Label aliveRuleLabel;
+    Label deadRuleLabel;
+    TextField cellAliveRuleField;
+    TextField cellDeadRuleField;
 
-    public static final String[] OPTIONS = new String[]{
-            "Conway's Game of Life",
-            "Gnarl"
-    };
+    public static final HashMap<String, Tuple<String, String>> RULE_PRESETS;
+    static {
+        RULE_PRESETS = new HashMap<String, Tuple<String, String>>();
+        RULE_PRESETS.put("", new Tuple<String, String>("", ""));
+        RULE_PRESETS.put("Conway's Game of Life", new Tuple<String, String>("3", "23"));
+        RULE_PRESETS.put("Seeds", new Tuple<String, String>("2", ""));
+        RULE_PRESETS.put("Life without Death", new Tuple<String, String>("3", "012345678"));
+        RULE_PRESETS.put("Diamoeba", new Tuple<String, String>("35678", "5678"));
+        RULE_PRESETS.put("2x2", new Tuple<String, String>("36", "125"));
+        RULE_PRESETS.put("HighLife", new Tuple<String, String>("36", "23"));
+        RULE_PRESETS.put("Day & Night", new Tuple<String, String>("3678", "34678"));
+        RULE_PRESETS.put("Morley", new Tuple<String, String>("368", "245"));
+        RULE_PRESETS.put("Anneal", new Tuple<String, String>("4678", "35678"));
+    }
 
-	public Basic2D (GameOfLife game) {
+	public Basic2D (final GameOfLife game) {
         renderer = new ShapeRenderer();
         gameManager = new GameManager2D();
         this.game = game;
@@ -49,33 +67,33 @@ public class Basic2D implements Screen {
         });
 
         final SelectBox<String> selectBox = new SelectBox<String>(skin);
-        final TextField cellAliveRuleField = new TextField("23", skin);
-        final TextField cellDeadRuleField = new TextField("3", skin);
-        selectBox.setItems(OPTIONS);
-        selectBox.setSelected("Conway's Game of Life");
+        String[] items = new String[RULE_PRESETS.size()];
+        int i = 0;
+        for (String k : RULE_PRESETS.keySet()) {
+            items[i] = k;
+            i++;
+        }
+        selectBox.setItems(items);
+        selectBox.setSelected("");
         selectBox.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                switch (selectBox.getSelectedIndex()) {
-                    case 0:
-                        cellAliveRuleField.setText("23");
-                        cellDeadRuleField.setText("3");
-                        break;
-                    case 1:
-                        cellAliveRuleField.setText("1");
-                        cellDeadRuleField.setText("1");
-                        break;
-                }
-                gameManager.setAliveRule(cellAliveRuleField.getText());
-                gameManager.setDeadRule(cellDeadRuleField.getText());
+                String preset = selectBox.getSelected();
+                Tuple<String, String> rules = RULE_PRESETS.get(preset);
+                cellDeadRuleField.setText(rules.x);
+                cellAliveRuleField.setText(rules.y);
+                gameManager.setDeadRule(rules.x);
+                gameManager.setAliveRule(rules.y);
             }
         });
 
-        Label aliveRuleLabel = new Label("AliveRule: ", skin);
+        aliveRuleLabel = new Label("AliveRule: ", skin);
         aliveRuleLabel.setColor(Color.BLACK);
-        Label deadRuleLabel = new Label("DeadRule: ", skin);
+        deadRuleLabel = new Label("DeadRule: ", skin);
         deadRuleLabel.setColor(Color.BLACK);
 
+        cellAliveRuleField = new TextField("", skin);
+        cellDeadRuleField = new TextField("", skin);
         cellAliveRuleField.setTextFieldListener(new TextField.TextFieldListener() {
             @Override
             public void keyTyped(TextField textField, char c) {
@@ -120,6 +138,10 @@ public class Basic2D implements Screen {
 
         gameManager.setAliveRule(cellAliveRuleField.getText());
         gameManager.setDeadRule(cellDeadRuleField.getText());
+
+        GridUI gridUI = new GridUI(gameManager);
+        gridUI.setBounds(0, 300, 500, 500);
+        stage.addActor(gridUI);
     }
 
 	@Override
@@ -140,24 +162,6 @@ public class Basic2D implements Screen {
     private void draw() {
         Gdx.gl.glClearColor(1, 1, 1, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-        renderer.setColor(Color.BLACK);
-        renderer.begin(ShapeRenderer.ShapeType.Line);
-        for (int i = 0; i < GameManager2D.GRID_WIDTH+1; i++) {
-            renderer.line(i*10, 300, i*10, 500+300);
-        }
-        for (int i = 0; i < GameManager2D.GRID_HEIGHT+1; i++) {
-            renderer.line(0, i*10+300, 500, i*10+300);
-        }
-        renderer.end();
-        renderer.begin(ShapeRenderer.ShapeType.Filled);
-        for (int i = 0; i < GameManager2D.GRID_WIDTH; i++) {
-            for (int j = 0; j < GameManager2D.GRID_HEIGHT; j++) {
-                if (gameManager.grid[i][j]) {
-                    renderer.rect(i*10, j*10+300, 10, 10);
-                }
-            }
-        }
-        renderer.end();
         stage.draw();
     }
 
