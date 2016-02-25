@@ -3,16 +3,37 @@ package com.gol.game;
 /**
  * Created by Jason on 2/23/2016.
  */
-public class GameManager {
+public class GameManager2D {
 
     public static final int GRID_WIDTH = 50;
     public static final int GRID_HEIGHT = 50;
     public boolean[][] grid = new boolean[GRID_WIDTH][GRID_HEIGHT];
+    public boolean[] aliveRule = new boolean[9];
+    public boolean[] deadRule = new boolean[9];
 
-    public GameManager() {
+    public GameManager2D() {
         grid[1][1] = true;
         grid[2][1] = true;
         grid[3][1] = true;
+    }
+
+    public void setAliveRule(String ruleString) {
+        setRule(aliveRule, ruleString);
+    }
+
+    public void setDeadRule(String ruleString) {
+        setRule(deadRule, ruleString);
+    }
+
+    private void setRule(boolean[] rule, String ruleString) {
+        for (int i = 0; i < rule.length; i++) {
+            rule[i] = false;
+        }
+        for (char c : ruleString.toCharArray()) {
+            int i = Character.getNumericValue(c);
+            System.out.println(c + "," + i);
+            rule[i] = true;
+        }
     }
 
     public void update() {
@@ -20,8 +41,8 @@ public class GameManager {
         for (int i = 0; i < GRID_WIDTH; i++) {
             for (int j = 0; j < GRID_HEIGHT; j++) {
                 int aliveNeighbors = getNumAliveNeighbors(i, j);
-                nextGrid[i][j] = (grid[i][j] && (aliveNeighbors == 2 || aliveNeighbors == 3))
-                                    || (!grid[i][j] && (aliveNeighbors == 3));
+                nextGrid[i][j] = (grid[i][j] && aliveRule[aliveNeighbors])
+                                    || (!grid[i][j] && deadRule[aliveNeighbors]);
             }
         }
         grid = nextGrid;

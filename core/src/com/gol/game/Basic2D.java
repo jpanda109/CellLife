@@ -9,8 +9,8 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
-import com.sun.xml.internal.bind.annotation.OverrideAnnotationOf;
 
 /**
  * Created by Jason on 2/23/2016.
@@ -18,7 +18,7 @@ import com.sun.xml.internal.bind.annotation.OverrideAnnotationOf;
 public class Basic2D implements Screen {
 
     ShapeRenderer renderer;
-    GameManager gameManager;
+    GameManager2D gameManager;
     float stepLength = .5f;
     float currentStepTime = 0;
     GameOfLife game;
@@ -26,15 +26,18 @@ public class Basic2D implements Screen {
     Table table;
     Skin skin;
 
+    public static final String[] OPTIONS = new String[]{
+            "Conway's Game of Life",
+            "Gnarl"
+    };
+
 	public Basic2D (GameOfLife game) {
         renderer = new ShapeRenderer();
-        gameManager = new GameManager();
+        gameManager = new GameManager2D();
         this.game = game;
         stage = new Stage();
         Gdx.input.setInputProcessor(stage);
-        table = new Table();
-        stage.addActor(table);
-        table.setDebug(true);
+
         skin = new Skin(Gdx.files.internal("uiskin.json"));
 
         Button stepButton = new TextButton("Step", skin);
@@ -44,13 +47,79 @@ public class Basic2D implements Screen {
                 gameManager.update();
             }
         });
+
+        final SelectBox<String> selectBox = new SelectBox<String>(skin);
+        final TextField cellAliveRuleField = new TextField("23", skin);
+        final TextField cellDeadRuleField = new TextField("3", skin);
+        selectBox.setItems(OPTIONS);
+        selectBox.setSelected("Conway's Game of Life");
+        selectBox.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                switch (selectBox.getSelectedIndex()) {
+                    case 0:
+                        cellAliveRuleField.setText("23");
+                        cellDeadRuleField.setText("3");
+                        break;
+                    case 1:
+                        cellAliveRuleField.setText("1");
+                        cellDeadRuleField.setText("1");
+                        break;
+                }
+                gameManager.setAliveRule(cellAliveRuleField.getText());
+                gameManager.setDeadRule(cellDeadRuleField.getText());
+            }
+        });
+
+        Label aliveRuleLabel = new Label("AliveRule: ", skin);
+        aliveRuleLabel.setColor(Color.BLACK);
+        Label deadRuleLabel = new Label("DeadRule: ", skin);
+        deadRuleLabel.setColor(Color.BLACK);
+
+        cellAliveRuleField.setTextFieldListener(new TextField.TextFieldListener() {
+            @Override
+            public void keyTyped(TextField textField, char c) {
+                gameManager.setAliveRule(textField.getText());
+            }
+        });
+        cellAliveRuleField.setTextFieldFilter(new TextField.TextFieldFilter() {
+            @Override
+            public boolean acceptChar(TextField textField, char c) {
+                return (c >= '0' && c <= '8');
+            }
+        });
+
+        cellDeadRuleField.setTextFieldListener(new TextField.TextFieldListener() {
+            @Override
+            public void keyTyped(TextField textField, char c) {
+                gameManager.setDeadRule(textField.getText());
+            }
+        });
+        cellDeadRuleField.setTextFieldFilter(new TextField.TextFieldFilter() {
+            @Override
+            public boolean acceptChar(TextField textField, char c) {
+                return (c >= '0' && c <= '8');
+            }
+        });
+
+        table = new Table();
+        table.setFillParent(true);
+        table.left();
+        table.bottom();
+        stage.addActor(table);
+        table.setDebug(true);
         table.add(stepButton);
         table.row();
+        table.add(selectBox);
+        table.row();
+        table.add(aliveRuleLabel);
+        table.add(cellAliveRuleField);
+        table.row();
+        table.add(deadRuleLabel);
+        table.add(cellDeadRuleField);
 
-        SelectBox<String> selectBox = new SelectBox<String>(skin);
-        selectBox.setItems("Conway's Game of Life", "Brian's Brain");
-        selectBox.setSelected("Conway's Game of Life");
-        table.add(selectBox).left().bottom().padLeft(300).padBottom(500).minWidth(200);
+        gameManager.setAliveRule(cellAliveRuleField.getText());
+        gameManager.setDeadRule(cellDeadRuleField.getText());
     }
 
 	@Override
@@ -73,16 +142,16 @@ public class Basic2D implements Screen {
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         renderer.setColor(Color.BLACK);
         renderer.begin(ShapeRenderer.ShapeType.Line);
-        for (int i = 0; i < GameManager.GRID_WIDTH+1; i++) {
+        for (int i = 0; i < GameManager2D.GRID_WIDTH+1; i++) {
             renderer.line(i*10, 300, i*10, 500+300);
         }
-        for (int i = 0; i < GameManager.GRID_HEIGHT+1; i++) {
+        for (int i = 0; i < GameManager2D.GRID_HEIGHT+1; i++) {
             renderer.line(0, i*10+300, 500, i*10+300);
         }
         renderer.end();
         renderer.begin(ShapeRenderer.ShapeType.Filled);
-        for (int i = 0; i < GameManager.GRID_WIDTH; i++) {
-            for (int j = 0; j < GameManager.GRID_HEIGHT; j++) {
+        for (int i = 0; i < GameManager2D.GRID_WIDTH; i++) {
+            for (int j = 0; j < GameManager2D.GRID_HEIGHT; j++) {
                 if (gameManager.grid[i][j]) {
                     renderer.rect(i*10, j*10+300, 10, 10);
                 }
