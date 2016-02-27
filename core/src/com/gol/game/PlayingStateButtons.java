@@ -21,7 +21,23 @@ public class PlayingStateButtons extends Table {
                 ui.switchPlayState();
             }
         });
+        TextButton slowButton = new TextButton("Slow", skin);
+        slowButton.addListener(new ClickListener() {
+            public void clicked(InputEvent e, float x, float y) {
+                gameController.stepLength *= 2;
+                gameController.currentStepTime = 0;
+            }
+        });
+        TextButton fastButton = new TextButton("Fast", skin);
+        fastButton.addListener(new ClickListener() {
+            public void clicked(InputEvent e, float x, float y) {
+                gameController.stepLength /= 2;
+                gameController.currentStepTime = 0;
+            }
+        });
 
         add(pauseButton);
+        add(slowButton);
+        add(fastButton);
     }
 }
