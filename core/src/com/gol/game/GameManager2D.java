@@ -1,8 +1,8 @@
 package com.gol.game;
 
-import com.badlogic.gdx.scenes.scene2d.Actor;
-import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.badlogic.gdx.scenes.scene2d.InputListener;
+import com.badlogic.gdx.utils.Queue;
+
+import java.util.Stack;
 
 /**
  * Created by Jason on 2/23/2016.
@@ -14,11 +14,13 @@ public class GameManager2D {
     public boolean[][] grid = new boolean[GRID_WIDTH][GRID_HEIGHT];
     public boolean[] aliveRule = new boolean[9];
     public boolean[] deadRule = new boolean[9];
+    public Queue<boolean[][]> prevStates;
 
     public GameManager2D() {
         grid[1][1] = true;
         grid[2][1] = true;
         grid[3][1] = true;
+        prevStates = new Queue<boolean[][]>();
     }
 
     public void setAliveRule(String ruleString) {
@@ -48,7 +50,17 @@ public class GameManager2D {
                                     || (!grid[i][j] && deadRule[aliveNeighbors]);
             }
         }
+        prevStates.addLast(grid);
+        if (prevStates.size > 10) {
+            prevStates.removeFirst();
+        }
         grid = nextGrid;
+    }
+
+    public void undo() {
+        if (prevStates.size > 0) {
+            grid = prevStates.removeLast();
+        }
     }
 
     public int getNumAliveNeighbors(int x, int y) {

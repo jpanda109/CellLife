@@ -77,6 +77,12 @@ public class Basic2D implements Screen {
                 gridState = GridState.PAUSED;
             }
         });
+        TextButton undoButton = new TextButton("Undo", skin);
+        undoButton.addListener(new ClickListener() {
+            public void clicked(InputEvent e, float x, float y) {
+                gameManager.undo();
+            }
+        });
 
         Label presetsLabel = new Label("Presets: ", skin);
         presetsLabel.setColor(Color.BLACK);
@@ -144,6 +150,7 @@ public class Basic2D implements Screen {
         table.add(playButton);
         table.add(pauseButton);
         table.add(stepButton);
+        table.add(undoButton);
         table.row();
         table.add(presetsLabel);
         table.add(selectBox);
