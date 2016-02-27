@@ -1,6 +1,5 @@
 package com.gol.game;
 
-import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.Button;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
@@ -13,7 +12,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
  */
 public class PausedStateButtons extends Table {
 
-    public PausedStateButtons(final GameManager2D gameManager, final Basic2D gameController, Skin skin) {
+    public PausedStateButtons(final GameManager2D gameManager, final Basic2D gameController, final ControlUI ui, Skin skin) {
         super();
 
         Button stepButton = new TextButton("Step", skin);
@@ -27,6 +26,7 @@ public class PausedStateButtons extends Table {
         playButton.addListener(new ClickListener() {
             public void clicked(InputEvent event, float x, float y) {
                 gameController.gridState = Basic2D.GridState.PLAYING;
+                ui.switchPlayState();
             }
         });
         TextButton undoButton = new TextButton("Undo", skin);

@@ -13,6 +13,9 @@ import java.util.HashMap;
  */
 public class ControlUI extends Table {
 
+    PlayingStateButtons playingStateButtons;
+    PausedStateButtons pausedStateButtons;
+    Basic2D gameController;
     public static final HashMap<String, Tuple<String, String>> RULE_PRESETS;
     static {
         RULE_PRESETS = new HashMap<String, Tuple<String, String>>();
@@ -29,7 +32,7 @@ public class ControlUI extends Table {
     }
 
     public ControlUI(Basic2D gameController, final GameManager2D gameManager) {
-
+        this.gameController = gameController;
         Skin skin = new Skin(Gdx.files.internal("uiskin.json"));
         final TextField cellAliveRuleField = new TextField("", skin);
         final TextField cellDeadRuleField = new TextField("", skin);
@@ -59,8 +62,8 @@ public class ControlUI extends Table {
             }
         });
 
-        PausedStateButtons pausedStateButtons = new PausedStateButtons(gameManager, gameController, skin);
-        PlayingStateButtons playingStateButtons = new PlayingStateButtons(gameManager, gameController, skin);
+        pausedStateButtons = new PausedStateButtons(gameManager, gameController, this, skin);
+        playingStateButtons = new PlayingStateButtons(gameManager, gameController, this, skin);
 
         Label presetsLabel = new Label("Presets: ", skin);
         presetsLabel.setColor(Color.BLACK);
@@ -110,6 +113,15 @@ public class ControlUI extends Table {
         add(deadRuleLabel);
         add(cellDeadRuleField);
 
+    }
+
+    public void switchPlayState() {
+        Cell cell = getCell(pausedStateButtons);
+        if (cell != null) {
+            cell.setActor(playingStateButtons);
+        } else {
+            getCell(playingStateButtons).setActor(pausedStateButtons);
+        }
     }
 
 }
