@@ -1,4 +1,3 @@
-import qualified Haste
 import qualified Haste.DOM as DOM
 import qualified Haste.Events as Events
 import qualified Haste.Graphics.Canvas as Canvas
@@ -8,8 +7,8 @@ import qualified Data.IORef as IORef
 type Grid = Map.Map (Int, Int) Bool
 type Rules = ([Bool], [Bool])
 
+defaultRules :: ([Bool], [Bool])
 defaultRules =
-    --([True | x <- [0..8]], [True | x <- [0..8]])
     ([x == 2 || x == 3 | x <- [0..8]], [x == 3 | x <- [0..8]])
 
 isAlive :: Grid -> Int -> Int -> Bool
@@ -47,6 +46,14 @@ drawCell grid x y =
       then Canvas.color (Canvas.RGB 0 0 0) (getRect grid x y)
       else Canvas.color (Canvas.RGB 255 255 255) (getRect grid x y)
 
+switchCell :: Grid -> Int -> Int -> Grid
+switchCell grid x y =
+    let switch ((x2, y2), b) = if x2 /= x || y2 /= y 
+                                 then ((x2, y2), b) 
+                                 else ((x2, y2), not b) in
+    Map.fromList $ map switch $ Map.toList grid
+    -- Map.fromList $ Map.toList grid
+
 drawGrid :: Canvas.Canvas -> Grid -> IO ()
 drawGrid canvas grid =
     Canvas.render canvas $
@@ -59,14 +66,20 @@ makeGrid w h =
 
 main :: IO()
 main = do
-  grid <- IORef.newIORef $ makeGrid 25 25
+  gridRef <- IORef.newIORef $ makeGrid 25 25
   Just canvas <- Canvas.getCanvasById "canvas"
-  IORef.readIORef grid >>= drawGrid canvas
-  Just nextStateButton <- DOM.elemById "nextStateButton"
+  IORef.readIORef gridRef >>= drawGrid canvas
+  Just nextStateButton <- DOM.elemById "h_nextStateButton"
   Events.onEvent nextStateButton Events.Click $ \_ -> do
-    IORef.modifyIORef grid $ \st ->
+    IORef.modifyIORef gridRef $ \st ->
       nextState st defaultRules
-    IORef.readIORef grid >>= drawGrid canvas
+    IORef.readIORef gridRef >>= drawGrid canvas
     return ()
+  Events.onEvent canvas Events.Click $ \(Events.MouseData (x, y) _ _) ->
+    let d20 q = quot q 20 in do
+    IORef.modifyIORef gridRef $ \st ->
+      switchCell st (d20 x) (d20 y)
+    IORef.readIORef gridRef >>= drawGrid canvas
+
   return ()
 
