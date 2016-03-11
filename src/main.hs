@@ -93,25 +93,28 @@ makeGrid :: Int -> Int -> Grid
 makeGrid w h =
     Map.fromList [((x, y), x == 10 || y == 10) | x <- [0..w-1], y <- [0..h-1]]
 
+makeGridState :: Int -> Int -> GridState
+makeGridState w h =
+    let grid = makeGrid 25 25 in
+      GridState { grids = calculateStates 101 grid
+                , curIndex = 0
+                , curGrid = grid
+                }
+
 playLoop :: Canvas.Canvas -> IORef.IORef Bool -> IORef.IORef GridState -> IO()
 playLoop canvas isPlayingRef gridStateRef = do
     isPlaying <- IORef.readIORef isPlayingRef
     Monad.when isPlaying $ do
       gridState <- IORef.readIORef gridStateRef
-      drawGrid canvas (curGrid gridState)
       IORef.modifyIORef gridStateRef $ \st ->
         incrementGridState st 1
+      drawGrid canvas (curGrid gridState)
       Haste.setTimer (Haste.Once 500) $ playLoop canvas isPlayingRef gridStateRef
       return ()
 
 main :: IO()
 main = do
-    let initialGrid = makeGrid 25 25
-    let initialGridSt = GridState { grids = calculateStates 101 initialGrid
-                                  , curIndex = 0
-                                  , curGrid = initialGrid
-                                  }
-    gridStateRef <- IORef.newIORef initialGridSt
+    gridStateRef <- IORef.newIORef $ makeGridState 25 25
     Just canvas <- Canvas.getCanvasById "canvas"
     gridState <- IORef.readIORef gridStateRef
     drawGrid canvas $ curGrid gridState
