@@ -52,7 +52,12 @@ switchCell grid x y =
                                  then ((x2, y2), b) 
                                  else ((x2, y2), not b) in
     Map.fromList $ map switch $ Map.toList grid
-    -- Map.fromList $ Map.toList grid
+
+calculateStates :: Int -> Grid -> [Grid]
+calculateStates n grid
+    | n <= 0    = []
+    | otherwise = let next = nextState grid defaultRules in
+      grid : calculateStates (n-1) next
 
 drawGrid :: Canvas.Canvas -> Grid -> IO ()
 drawGrid canvas grid =
@@ -63,23 +68,35 @@ makeGrid :: Int -> Int -> Grid
 makeGrid w h =
     Map.fromList [((x, y), x == 10 || y == 10) | x <- [0..w-1], y <- [0..h-1]]
 
+doNextState :: IORef.IORef Grid -> Canvas.Canvas -> IO()
+doNextState gridRef canvas = do
+    IORef.modifyIORef gridRef $ \grid ->
+      nextState grid defaultRules
+    IORef.readIORef gridRef >>= drawGrid canvas
+    return ()
 
 main :: IO()
 main = do
   gridRef <- IORef.newIORef $ makeGrid 25 25
   Just canvas <- Canvas.getCanvasById "canvas"
   IORef.readIORef gridRef >>= drawGrid canvas
+  curGrid <- IORef.readIORef gridRef
+  let gridStates = calculateStates 100 curGrid
   Just nextStateButton <- DOM.elemById "h_nextStateButton"
-  Events.onEvent nextStateButton Events.Click $ \_ -> do
-    IORef.modifyIORef gridRef $ \st ->
-      nextState st defaultRules
-    IORef.readIORef gridRef >>= drawGrid canvas
-    return ()
+  Events.onEvent nextStateButton Events.Click $ \_ -> 
+    doNextState gridRef canvas
   Events.onEvent canvas Events.Click $ \(Events.MouseData (x, y) _ _) ->
     let d20 q = quot q 20 in do
     IORef.modifyIORef gridRef $ \st ->
       switchCell st (d20 x) (d20 y)
     IORef.readIORef gridRef >>= drawGrid canvas
-
+  Just stateInput <- DOM.elemById "h_stateInput"
+  Just stateRange <- DOM.elemById "h_stateRange"
+  Events.onEvent stateRange Events.MouseMove $ \(Events.MouseData _ b _) ->
+    case b of
+      Just Events.MouseLeft -> do
+        p <- DOM.getProp stateRange "value"
+        DOM.setProp stateInput "value" p
+      _ -> return ()
   return ()
 
