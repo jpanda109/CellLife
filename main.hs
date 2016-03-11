@@ -132,8 +132,8 @@ main = do
         _ -> return ()
     Just calculateButton <- DOM.elemById "h_calculateButton"
     Just playButton <- DOM.elemById "h_playButton"
-    isPlayingRef <- IORef.newIORef True
-    Events.onEvent stateRange Events.Click $ \_ -> do
+    isPlayingRef <- IORef.newIORef False
+    Events.onEvent playButton Events.Click $ \_ -> do
       IORef.modifyIORef isPlayingRef $ \st -> not st
       isPlaying <- IORef.readIORef isPlayingRef
       Monad.when isPlaying $ playLoop canvas isPlayingRef gridState
