@@ -23,6 +23,15 @@ incrementGridState state i =
                   , curGrid = (grids state) !! j
                   }
 
+setGridState :: GridState -> Int -> GridState
+setGridState state i =
+    if i < length (grids state) && i >= 0
+      then GridState { grids = grids state
+                     , curIndex = i
+                     , curGrid = (grids state) !! i
+                     }
+      else state
+
 defaultRules :: ([Bool], [Bool])
 defaultRules =
     ([x == 2 || x == 3 | x <- [0..8]], [x == 3 | x <- [0..8]])
@@ -84,19 +93,15 @@ makeGrid :: Int -> Int -> Grid
 makeGrid w h =
     Map.fromList [((x, y), x == 10 || y == 10) | x <- [0..w-1], y <- [0..h-1]]
 
-doNextState :: IORef.IORef Grid -> Canvas.Canvas -> IO()
-doNextState gridRef canvas = do
-    IORef.modifyIORef gridRef $ \grid ->
-      nextState grid defaultRules
-    IORef.readIORef gridRef >>= drawGrid canvas
-    return ()
-
-playLoop :: Canvas.Canvas -> IORef.IORef Bool -> GridState -> IO()
-playLoop canvas isPlayingRef gridState = do
+playLoop :: Canvas.Canvas -> IORef.IORef Bool -> IORef.IORef GridState -> IO()
+playLoop canvas isPlayingRef gridStateRef = do
     isPlaying <- IORef.readIORef isPlayingRef
     Monad.when isPlaying $ do
+      gridState <- IORef.readIORef gridStateRef
       drawGrid canvas (curGrid gridState)
-      Haste.setTimer (Haste.Once 500) $ playLoop canvas isPlayingRef (incrementGridState gridState 1)
+      IORef.modifyIORef gridStateRef $ \st ->
+        incrementGridState st 1
+      Haste.setTimer (Haste.Once 500) $ playLoop canvas isPlayingRef gridStateRef
       return ()
 
 main :: IO()
@@ -111,9 +116,12 @@ main = do
     gridState <- IORef.readIORef gridStateRef
     drawGrid canvas $ curGrid gridState
     Just nextStateButton <- DOM.elemById "h_nextStateButton"
+    Events.onEvent nextStateButton Events.Click $ \_ -> do
+      IORef.modifyIORef gridStateRef $ \st ->
+        incrementGridState st 1
+      gridState <- IORef.readIORef gridStateRef
+      drawGrid canvas (curGrid gridState)
     {-
-    Events.onEvent nextStateButton Events.Click $ \_ -> 
-      doNextState gridRef canvas
     Events.onEvent canvas Events.Click $ \(Events.MouseData (x, y) _ _) ->
       let d20 q = quot q 20 in do
         IORef.modifyIORef gridRef $ \st ->
@@ -129,13 +137,23 @@ main = do
           DOM.setProp stateInput "value" p
           gridState <- IORef.readIORef gridStateRef
           drawGrid canvas ((grids gridState)!! (read p))
+          IORef.modifyIORef gridStateRef $ \st ->
+            setGridState st (read p)
         _ -> return ()
     Just calculateButton <- DOM.elemById "h_calculateButton"
+    Events.onEvent calculateButton Events.Click $ \_ -> do
+      IORef.modifyIORef gridStateRef $ \st ->
+        GridState { grids = calculateStates 101 (curGrid st)
+                  , curIndex = 0
+                  , curGrid = (curGrid st)
+                  }
+      gridState <- IORef.readIORef gridStateRef
+      drawGrid canvas (curGrid gridState)
     Just playButton <- DOM.elemById "h_playButton"
     isPlayingRef <- IORef.newIORef False
     Events.onEvent playButton Events.Click $ \_ -> do
       IORef.modifyIORef isPlayingRef $ \st -> not st
       isPlaying <- IORef.readIORef isPlayingRef
-      Monad.when isPlaying $ playLoop canvas isPlayingRef gridState
+      Monad.when isPlaying $ playLoop canvas isPlayingRef gridStateRef
     return ()
 
