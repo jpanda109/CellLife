@@ -1,7 +1,6 @@
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.IORef as IORef
-import qualified Haste
 import qualified Haste.DOM as DOM
 import qualified Haste.Events as Events
 import qualified Haste.Graphics.Canvas as Canvas
@@ -14,21 +13,42 @@ getCell :: Grid -> Coord -> Cell
 getCell grid coord =
     Maybe.fromMaybe Ground (Map.lookup coord grid)
 
+shiftWater :: Grid -> Coord -> Coord -> Grid
+shiftWater grid src dst =
+    let srcCell = getCell grid src
+        dstCell = getCell grid dst
+    in case (srcCell, dstCell) of
+         (Water srcN, Water dstN) ->
+           Map.insert dst (Water $ dstN+1) . Map.insert src (Water $ srcN-1) $ grid
+         (_, _)                   -> grid
+
+spread :: Grid -> Coord -> Grid
+spread grid coord =
+    case (getCell grid left, getCell grid cur, getCell grid right) of
+      (Water l, Water c, Water r) 
+        | c>l          -> shiftWater grid cur left
+        | c>r          -> shiftWater grid cur right
+      (Ground, Water c, Water r) | c>r -> shiftWater grid cur right
+      (Water l, Water c, Ground) | c>l -> shiftWater grid cur left
+      (_, _, _) -> grid
+    where (x, y) = coord
+          left = (x-1, y)
+          right = (x+1, y)
+          cur = (x, y)
+
 changeState :: Grid -> Coord -> Grid
 changeState grid coord =
     let (x, y) = coord
-        left = (x-1, y)
-        right = (x+1, y)
-        up = (x, y+1)
         down = (x, y-1)
     in case getCell grid coord of
-           Ground -> grid
-           Water n -> case getCell grid down of
+         Ground -> grid
+         Water n -> 
+           case getCell grid down of
              Ground -> grid
              Water nd ->
-               if nd <= n && nd < 3
-                 then Map.insert down (Water $ n+1) . Map.insert coord (Water $ n-1) $ grid
-                 else grid
+               if nd < n && nd < 3
+                 then shiftWater grid coord down
+                 else spread grid coord 
 
 nextState :: Grid -> Grid
 nextState grid =
@@ -54,9 +74,11 @@ drawGrid canvas grid =
 
 initialGrid :: Grid
 initialGrid =
-    let f x y = if y == 5
-                  then Ground
-                  else Water 1
+    let f x y
+            | y == 5    = Ground
+            | x == 5    = Ground
+            | x == 4    = Water 3
+            | otherwise = Water 0
     in
     Map.fromList [((x, y), f x y) | x <- [0..9], y <- [0..9]]
 
